@@ -5,21 +5,21 @@ namespace Concrete\Core\Foundation\Queue;
 use Bernard\BernardEvents;
 use Bernard\Event\EnvelopeEvent;
 use Bernard\Event\RejectEnvelopeEvent;
+use Concrete\Core\Logging\Channels;
+use Concrete\Core\Logging\LoggerAwareInterface;
+use Concrete\Core\Logging\LoggerAwareTrait;
 use Concrete\Core\System\Mutex\MutexInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class BernardSubscriber implements EventSubscriberInterface
+class BernardSubscriber implements EventSubscriberInterface, LoggerAwareInterface
 {
 
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
+    use LoggerAwareTrait;
 
-    public function __construct(LoggerInterface $logger)
+    public function getLoggerChannel()
     {
-        $this->logger = $logger;
+        return Channels::CHANNEL_QUEUE;
     }
 
     public static function getSubscribedEvents()

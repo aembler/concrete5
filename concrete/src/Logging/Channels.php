@@ -16,6 +16,13 @@ class Channels
     const CHANNEL_APPLICATION = 'application';
 
     /**
+     * Channel identifier: api.
+     *
+     * @var string
+     */
+    const CHANNEL_API = 'api';
+
+    /**
      * Channel identifier: authentication.
      *
      * @var string
@@ -92,6 +99,13 @@ class Channels
      */
     const CHANNEL_OPERATIONS = 'operations';
 
+    /**
+     * Channel identifier: queue.
+     *
+     * @var string
+     */
+    const CHANNEL_QUEUE = 'queue';
+
 
     /**
      * Channel identifier: all – Do NOT use this to log to. This is a separate system channel that tells configuration
@@ -109,9 +123,11 @@ class Channels
     public static function getCoreChannels()
     {
         return [
+            self::CHANNEL_API,
             self::CHANNEL_EMAIL,
             self::CHANNEL_EXCEPTIONS,
             self::CHANNEL_PACKAGES,
+            self::CHANNEL_QUEUE,
             self::CHANNEL_SECURITY,
             self::CHANNEL_AUTHENTICATION,
             self::CHANNEL_PERMISSIONS,
@@ -149,12 +165,16 @@ class Channels
     {
         $text = new Text();
         switch ($channel) {
+            case self::CHANNEL_API:
+                return tc('Log channel', 'API');
             case self::CHANNEL_APPLICATION:
                 return tc('Log channel', 'Application');
             case self::CHANNEL_AUTHENTICATION:
                 return tc('Log channel', 'Authentication');
             case self::CHANNEL_EMAIL:
                 return tc('Log channel', 'Sent Emails');
+            case self::CHANNEL_QUEUE:
+                return tc('Log channel', 'Queue');
             case self::CHANNEL_EXCEPTIONS:
                 return tc('Log channel', 'Exceptions');
             case self::CHANNEL_SECURITY:

@@ -1,18 +1,23 @@
 <?php
-namespace Concrete\Core\Api;
+namespace Concrete\Core\Api\Client;
 
-use Concrete\Core\Config\Repository\Repository;
-use Concrete\Core\Url\Resolver\CanonicalUrlResolver;
+use Concrete\Core\Logging\Channels;
+use Concrete\Core\Logging\LoggerAwareInterface;
+use Concrete\Core\Logging\LoggerAwareTrait;
 use Frankkessler\Guzzle\Oauth2\GrantType\ClientCredentials;
 use Frankkessler\Guzzle\Oauth2\GrantType\RefreshToken;
 use Frankkessler\Guzzle\Oauth2\Oauth2Client;
-use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Command\Guzzle\Description;
-use GuzzleHttp\Command\Guzzle\GuzzleClient;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\MessageFormatter;
+use GuzzleHttp\Middleware;
+use Psr\Log\LoggerInterface;
 
-class Api
+class Client implements LoggerAwareInterface
 {
+
+    use LoggerAwareTrait;
 
     /**
      * @var string
@@ -30,11 +35,16 @@ class Api
     protected $client;
 
     /**
-     * @var APIFactory
+     * @var ClientFactory
      */
     protected $factory;
 
-    public function __construct(APIFactory $factory, $baseUrl, $config)
+    public function getLoggerChannel()
+    {
+        return Channels::CHANNEL_API;
+    }
+
+    public function __construct(ClientFactory $factory, $baseUrl, $config)
     {
         $this->factory = $factory;
         $this->baseUrl = $baseUrl;
@@ -46,9 +56,28 @@ class Api
         return $this->baseUrl;
     }
 
+    private function createLoggingMiddleware(string $messageFormat)
+    {
+        return Middleware::log($this->logger, new MessageFormatter($messageFormat));
+    }
+
+    private function appendLoggingHandler(HandlerStack $stack, array $messageFormats)
+    {
+        collect($messageFormats)->each(function ($messageFormat) use ($stack) {
+            $stack->push(
+                $this->createLoggingMiddleware($messageFormat)
+            );
+        });
+
+        return $stack;
+    }
+
     protected function getServiceClient($name)
     {
-        return new APIClient($this->getHTTPClient(), $this->getDescription($name));
+        return new ServiceClient(
+            $this->getHTTPClient(),
+            $this->getDescription($name)
+        );
     }
 
     protected function getDescription($name)
@@ -87,7 +116,14 @@ class Api
 
             $refreshToken = new RefreshToken($config);
             $this->client->setRefreshTokenGrantType($refreshToken);
+
+            $this->appendLoggingHandler($this->client->getConfig('handler'), [
+                '{method} {uri} HTTP/{version} {req_body}',
+                'RESPONSE: {code} - {res_body}',
+            ]);
+
         }
+
         return $this->client;
     }
 
